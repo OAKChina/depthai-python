@@ -45,7 +45,6 @@ import time
 from itertools import cycle
 from pathlib import Path
 import sys
-#import cam_test_gui
 import signal
 
 
@@ -110,6 +109,7 @@ os.environ["DEPTHAI_BOOT_TIMEOUT"] = str(args.boot_timeout)
 import depthai as dai
 
 if len(sys.argv) == 1:
+    import cam_test_gui
     cam_test_gui.main()
 
 cam_list = []
@@ -357,7 +357,6 @@ with dai.Device(*dai_device_args) as device:
     chroma_denoise = 0
     control = 'none'
     show = False
-    tof_amp_min = tofConfig.depthParams.minimumAmplitude
 
     jet_custom = cv2.applyColorMap(np.arange(256, dtype=np.uint8), cv2.COLORMAP_JET)
     jet_custom[0] = [0, 0, 0]
@@ -378,7 +377,8 @@ with dai.Device(*dai_device_args) as device:
                 fps_capt[c].update(pkt.getTimestamp().total_seconds())
                 width, height = pkt.getWidth(), pkt.getHeight()
                 frame = pkt.getCvFrame()
-                if cam_type_tof[c.split('_')[-1]] and not (c.startswith('raw_') or c.startswith('tof_amplitude_')):
+                cam_skt = c.split('_')[-1]
+                if cam_type_tof[cam_skt] and not (c.startswith('raw_') or c.startswith('tof_amplitude_')):
                     if args.tof_cm:
                         # pixels represent `cm`, capped to 255. Value can be checked hovering the mouse
                         frame = (frame // 10).clip(0, 255).astype(np.uint8)
@@ -395,7 +395,7 @@ with dai.Device(*dai_device_args) as device:
                     print(txt)
                 capture = c in capture_list
                 if capture:
-                    capture_file_info = ('capture_' + c + '_' + cam_name[cam_socket_opts[c].name]
+                    capture_file_info = ('capture_' + c + '_' + cam_name[cam_socket_opts[cam_skt].name]
                          + '_' + str(width) + 'x' + str(height)
                          + '_exp_' + str(int(pkt.getExposureTime().total_seconds()*1e6))
                          + '_iso_' + str(pkt.getSensitivity())
@@ -417,7 +417,7 @@ with dai.Device(*dai_device_args) as device:
                     if type == dai.ImgFrame.Type.RAW12: multiplier = (1 << (16-4))
                     frame = frame * multiplier
                     # Debayer as color for preview/png
-                    if cam_type_color[c.split('_')[-1]]:
+                    if cam_type_color[cam_skt]:
                         # See this for the ordering, at the end of page:
                         # https://docs.opencv.org/4.5.1/de/d25/imgproc_color_conversions.html
                         # TODO add bayer order to ImgFrame getType()
@@ -449,12 +449,12 @@ with dai.Device(*dai_device_args) as device:
         elif key == ord('c'):
             capture_list = streams.copy()
             capture_time = time.strftime('%Y%m%d_%H%M%S')
-        elif key == ord('g'):
+        elif key == ord('g') and tof:
             f_mod = dai.RawToFConfig.DepthParams.TypeFMod.MAX if tofConfig.depthParams.freqModUsed  == dai.RawToFConfig.DepthParams.TypeFMod.MIN else dai.RawToFConfig.DepthParams.TypeFMod.MIN
             print("ToF toggling f_mod value to:", f_mod)
             tofConfig.depthParams.freqModUsed = f_mod
             tofCfgQueue.send(tofConfig)
-        elif key == ord('h'):
+        elif key == ord('h') and tof:
             tofConfig.depthParams.avgPhaseShuffle = not tofConfig.depthParams.avgPhaseShuffle
             print("ToF toggling avgPhaseShuffle value to:", tofConfig.depthParams.avgPhaseShuffle)
             tofCfgQueue.send(tofConfig)
@@ -605,7 +605,7 @@ with dai.Device(*dai_device_args) as device:
                 chroma_denoise = clamp(chroma_denoise + change, 0, 4)
                 print("Chroma denoise:", chroma_denoise)
                 ctrl.setChromaDenoise(chroma_denoise)
-            elif control == 'tof_amplitude_min':
+            elif control == 'tof_amplitude_min' and tof:
                 amp_min = clamp(tofConfig.depthParams.minimumAmplitude + change, 0, 50)
                 print("Setting min amplitude(confidence) to:", amp_min)
                 tofConfig.depthParams.minimumAmplitude = amp_min
