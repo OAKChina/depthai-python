@@ -51,7 +51,7 @@ import signal
 
 def socket_type_pair(arg):
     socket, type = arg.split(',')
-    if not (socket in ['rgb', 'left', 'right', 'camd']):
+    if not (socket in ['rgb', 'left', 'right', 'cama', 'camb', 'camc', 'camd']):
         raise ValueError("")
     if not (type in ['m', 'mono', 'c', 'color', 't', 'tof']):
         raise ValueError("")
@@ -126,23 +126,22 @@ print("DepthAI version:", dai.__version__)
 print("DepthAI path:", dai.__file__)
 
 cam_socket_opts = {
-    'rgb': dai.CameraBoardSocket.RGB,   # Or CAM_A
-    'left': dai.CameraBoardSocket.LEFT,  # Or CAM_B
-    'right': dai.CameraBoardSocket.RIGHT,  # Or CAM_C
-    'camd': dai.CameraBoardSocket.CAM_D,
-}
-
-cam_socket_to_name = {
-    'RGB': 'rgb',
-    'LEFT': 'left',
-    'RIGHT': 'right',
-    'CAM_D': 'camd',
+    'rgb'  : dai.CameraBoardSocket.CAM_A,
+    'left' : dai.CameraBoardSocket.CAM_B,
+    'right': dai.CameraBoardSocket.CAM_C,
+    'cama' : dai.CameraBoardSocket.CAM_A,
+    'camb' : dai.CameraBoardSocket.CAM_B,
+    'camc' : dai.CameraBoardSocket.CAM_C,
+    'camd' : dai.CameraBoardSocket.CAM_D,
 }
 
 rotate = {
     'rgb': args.rotate in ['all', 'rgb'],
     'left': args.rotate in ['all', 'mono'],
     'right': args.rotate in ['all', 'mono'],
+    'cama': args.rotate in ['all', 'rgb'],
+    'camb': args.rotate in ['all', 'mono'],
+    'camc': args.rotate in ['all', 'mono'],
     'camd': args.rotate in ['all', 'rgb'],
 }
 
@@ -290,12 +289,11 @@ with dai.Device(*dai_device_args) as device:
             f' -socket {p.socket.name:6}: {p.sensorName:6} {p.width:4} x {p.height:4} focus:', end='')
         print('auto ' if p.hasAutofocus else 'fixed', '- ', end='')
         print(*[type.name for type in p.supportedTypes])
-        socket_name = cam_socket_to_name[p.socket.name]
-        cam_name[socket_name] = p.sensorName
+        cam_name[p.socket.name] = p.sensorName
         if args.enable_raw:
-            cam_name['raw_'+socket_name] = p.sensorName
+            cam_name['raw_'+p.socket.name] = p.sensorName
         if args.tof_amplitude:
-            cam_name['tof_amplitude_'+socket_name] = p.sensorName
+            cam_name['tof_amplitude_'+p.socket.name] = p.sensorName
 
     print('USB speed:', device.getUsbSpeed().name)
 
@@ -397,7 +395,7 @@ with dai.Device(*dai_device_args) as device:
                     print(txt)
                 capture = c in capture_list
                 if capture:
-                    capture_file_info = ('capture_' + c + '_' + cam_name[c]
+                    capture_file_info = ('capture_' + c + '_' + cam_name[cam_socket_opts[c].name]
                          + '_' + str(width) + 'x' + str(height)
                          + '_exp_' + str(int(pkt.getExposureTime().total_seconds()*1e6))
                          + '_iso_' + str(pkt.getSensitivity())

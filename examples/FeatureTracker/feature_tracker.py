@@ -94,9 +94,9 @@ xinTrackedFeaturesConfig.setStreamName("trackedFeaturesConfig")
 
 # Properties
 monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_720_P)
-monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
-monoRight.setResolution(dai.ColorCameraProperties.SensorResolution.THE_720_P)
-monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+monoLeft.setCamera("left")
+monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_720_P)
+monoRight.setCamera("right")
 
 # Linking
 monoLeft.out.link(featureTrackerLeft.inputImage)

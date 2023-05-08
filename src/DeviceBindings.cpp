@@ -219,6 +219,7 @@ static void bindConstructors(ARG& arg){
         return std::make_unique<D>(pipeline, dev);
     }), py::arg("pipeline"), DOC(dai, DeviceBase, DeviceBase))
     .def(py::init([](const Pipeline& pipeline, bool usb2Mode){
+        PyErr_WarnEx(PyExc_DeprecationWarning, "Use constructor taking 'UsbSpeed' instead", 1);
         auto dev = deviceSearchHelper<D>();
         py::gil_scoped_release release;
         return std::make_unique<D>(pipeline, dev, usb2Mode);
@@ -234,6 +235,7 @@ static void bindConstructors(ARG& arg){
         return std::make_unique<D>(pipeline, dev, pathToCmd);
     }), py::arg("pipeline"), py::arg("pathToCmd"), DOC(dai, DeviceBase, DeviceBase, 4))
     .def(py::init([](const Pipeline& pipeline, const DeviceInfo& deviceInfo, bool usb2Mode){
+        PyErr_WarnEx(PyExc_DeprecationWarning, "Use constructor taking 'UsbSpeed' instead", 1);
         py::gil_scoped_release release;
         return std::make_unique<D>(pipeline, deviceInfo, usb2Mode);
     }), py::arg("pipeline"), py::arg("devInfo"), py::arg("usb2Mode") = false, DOC(dai, DeviceBase, DeviceBase, 6))
@@ -253,6 +255,7 @@ static void bindConstructors(ARG& arg){
         return std::make_unique<D>(version, dev);
     }), py::arg("version") = OpenVINO::VERSION_UNIVERSAL, DOC(dai, DeviceBase, DeviceBase, 10))
     .def(py::init([](OpenVINO::Version version, bool usb2Mode){
+        PyErr_WarnEx(PyExc_DeprecationWarning, "Use constructor taking 'UsbSpeed' instead", 1);
         auto dev = deviceSearchHelper<D>();
         py::gil_scoped_release release;
         return std::make_unique<D>(version, dev, usb2Mode);
@@ -268,6 +271,7 @@ static void bindConstructors(ARG& arg){
         return std::make_unique<D>(version, dev, pathToCmd);
     }), py::arg("version"), py::arg("pathToCmd"), DOC(dai, DeviceBase, DeviceBase, 13))
     .def(py::init([](OpenVINO::Version version, const DeviceInfo& deviceInfo, bool usb2Mode){
+        PyErr_WarnEx(PyExc_DeprecationWarning, "Use constructor taking 'UsbSpeed' instead", 1);
         py::gil_scoped_release release;
         return std::make_unique<D>(version, deviceInfo, usb2Mode);
     }), py::arg("version"), py::arg("deviceInfo"), py::arg("usb2Mode") = false, DOC(dai, DeviceBase, DeviceBase, 15))
@@ -478,13 +482,15 @@ void DeviceBindings::bind(pybind11::module& m, void* pCallstack){
         .def_readwrite("version", &Device::Config::version)
         .def_readwrite("board", &Device::Config::board)
         .def_readwrite("nonExclusiveMode", &Device::Config::nonExclusiveMode)
+        .def_readwrite("outputLogLevel", &Device::Config::outputLogLevel)
+        .def_readwrite("logLevel", &Device::Config::logLevel)
     ;
 
     // Bind CrashDump
     crashDump
         .def(py::init<>())
         .def("serializeToJson", &CrashDump::serializeToJson, DOC(dai, CrashDump, serializeToJson))
-        
+
         .def_readwrite("crashReports", &CrashDump::crashReports, DOC(dai, CrashDump, crashReports))
         .def_readwrite("depthaiCommitHash", &CrashDump::depthaiCommitHash, DOC(dai, CrashDump, depthaiCommitHash))
         .def_readwrite("deviceId", &CrashDump::deviceId, DOC(dai, CrashDump, deviceId))
@@ -497,7 +503,7 @@ void DeviceBindings::bind(pybind11::module& m, void* pCallstack){
         .def_readwrite("crashedThreadId", &CrashDump::CrashReport::crashedThreadId, DOC(dai, CrashDump, CrashReport, crashedThreadId))
         .def_readwrite("threadCallstack", &CrashDump::CrashReport::threadCallstack, DOC(dai, CrashDump, CrashReport, threadCallstack))
     ;
- 
+
     errorSourceInfo
         .def(py::init<>())
         .def_readwrite("assertContext", &CrashDump::CrashReport::ErrorSourceInfo::assertContext, DOC(dai, CrashDump, CrashReport, ErrorSourceInfo, assertContext))
@@ -562,6 +568,7 @@ void DeviceBindings::bind(pybind11::module& m, void* pCallstack){
         .def_static("getEmbeddedDeviceBinary", py::overload_cast<DeviceBase::Config>(&DeviceBase::getEmbeddedDeviceBinary), py::arg("config"), DOC(dai, DeviceBase, getEmbeddedDeviceBinary, 2))
         .def_static("getDeviceByMxId", &DeviceBase::getDeviceByMxId, py::arg("mxId"), DOC(dai, DeviceBase, getDeviceByMxId))
         .def_static("getAllConnectedDevices", &DeviceBase::getAllConnectedDevices, DOC(dai, DeviceBase, getAllConnectedDevices))
+        .def_static("getGlobalProfilingData", &DeviceBase::getGlobalProfilingData, DOC(dai, DeviceBase, getGlobalProfilingData))
 
         // methods
         .def("getBootloaderVersion", &DeviceBase::getBootloaderVersion, DOC(dai, DeviceBase, getBootloaderVersion))
@@ -608,6 +615,7 @@ void DeviceBindings::bind(pybind11::module& m, void* pCallstack){
         .def("getUsbSpeed", [](DeviceBase& d) { py::gil_scoped_release release; return d.getUsbSpeed(); }, DOC(dai, DeviceBase, getUsbSpeed))
         .def("getDeviceInfo", [](DeviceBase& d) { py::gil_scoped_release release; return d.getDeviceInfo(); }, DOC(dai, DeviceBase, getDeviceInfo))
         .def("getMxId", [](DeviceBase& d) { py::gil_scoped_release release; return d.getMxId(); }, DOC(dai, DeviceBase, getMxId))
+        .def("getProfilingData", [](DeviceBase& d) { py::gil_scoped_release release; return d.getProfilingData(); }, DOC(dai, DeviceBase, getProfilingData))
         .def("readCalibration", [](DeviceBase& d) { py::gil_scoped_release release; return d.readCalibration(); }, DOC(dai, DeviceBase, readCalibration))
         .def("flashCalibration", [](DeviceBase& d, CalibrationHandler calibrationDataHandler) { py::gil_scoped_release release; return d.flashCalibration(calibrationDataHandler); }, py::arg("calibrationDataHandler"), DOC(dai, DeviceBase, flashCalibration))
         .def("setXLinkChunkSize", [](DeviceBase& d, int s) { py::gil_scoped_release release; d.setXLinkChunkSize(s); }, py::arg("sizeBytes"), DOC(dai, DeviceBase, setXLinkChunkSize))
